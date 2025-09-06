@@ -1,5 +1,6 @@
 # automation-and-productivity2
-Productivity & Automation App
+Productivity & Automation website
+WE:WorkEase
 This project is a comprehensive web-based productivity and automation tool designed to help users simplify, organize, and conquer their daily tasks and goals. Built for the Automation & Productivity hackathon, the app provides a unified platform for task management, habit tracking, and focused work sessions.
 
 Problem Statement
