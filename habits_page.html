@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Habit Tracker Flow</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f6ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      position: relative;
+    }
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,.1);
+      text-align: center;
+      width: 400px;
+      position: relative;
+    }
+    h2 { color: #0066ff; margin-bottom: 20px }
+    .btn {
+      display: block;
+      width: 100%;
+      margin: 10px 0;
+      padding: 12px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .btn:hover { background: #0056cc }
+    .hidden { display: none }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7,1fr);
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .calendar-grid label {
+      display: block;
+      padding: 8px;
+      background: #f0f0f0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .calendar-grid input { margin-right: 5px }
+    .error { color: red; font-size: 14px; margin-top: 10px; display: none }
+    .small-btn { width: 48%; padding: 8px; font-size: 14px }
+    .top-back-btn {
+      position: absolute; top: 15px; left: 15px;
+      background: none; border: none; font-size: 18px; cursor: pointer;
+    }
+    @media(max-width:600px){.container{width:90%;padding:20px}}
+  </style>
+</head>
+<body>
+  <!-- Main Screen -->
+  <div class="container" id="screen1">
+    <h2>Habit</h2>
+    <p>How do you want to evaluate your progress?</p>
+    <button class="btn" onclick="goTo('yesnoPage')">With Yes/No</button>
+    <div style="font-size:13px;color:#555;margin-bottom:15px;">Record whether you succeed with the activity or not.</div>
+    <button class="btn" onclick="goTo('numericPage')">With Numeric Value</button>
+    <div style="font-size:13px;color:#555;margin-bottom:15px;">Set a numeric value as a daily goal or limit for the habit.</div>
+    <button class="btn" onclick="goTo('timerPage')">With a Timer</button>
+    <div style="font-size:13px;color:#555;">Set a time duration as a daily goal or limit for the habit.</div>
+  </div>
+
+  <!-- Yes/No Screen -->
+  <div class="container hidden" id="yesnoPage">
+    <h2>Yes/No Evaluation</h2>
+    <input type="text" id="habitYesNo" placeholder="Enter habit name">
+    <div style="display:flex;justify-content:space-between;margin-top:15px;">
+      <button class="btn small-btn" onclick="goBack('yesnoPage','screen1')">Back</button>
+      <button class="btn small-btn" onclick="validateAndNext('habitYesNo','frequencyPage','errorYesNo')">Next</button>
+    </div>
+    <p id="errorYesNo" class="error">Please fill out all required fields before proceeding.</p>
+  </div>
+
+  <!-- Numeric Screen -->
+  <div class="container hidden" id="numericPage">
+    <h2>Numeric Evaluation</h2>
+    <input type="text" id="habitNumeric" placeholder="Enter habit name"><br><br>
+    <label>Condition:</label>
+    <select id="numericCondition">
+      <option value="">Select</option>
+      <option value="atleast">At least</option>
+      <option value="lessthan">Less than</option>
+      <option value="exactly">Exactly</option>
+      <option value="any">Any value</option>
+    </select>
+    <input type="number" id="numericValue" placeholder="Enter value"><br><br>
+    <label>Unit:</label>
+    <input type="text" id="numericUnit" placeholder="e.g. pages"> a day
+    <div style="display:flex;justify-content:space-between;margin-top:15px;">
+      <button class="btn small-btn" onclick="goBack('numericPage','screen1')">Back</button>
+      <button class="btn small-btn" onclick="validateAndNext('habitNumeric','frequencyPage','errorNumeric',['numericCondition','numericValue','numericUnit'])">Next</button>
+    </div>
+    <p id="errorNumeric" class="error">Please fill out all required fields before proceeding.</p>
+  </div>
+
+  <!-- Timer Screen -->
+  <div class="container hidden" id="timerPage">
+    <h2>Timer Evaluation</h2>
+    <input type="text" id="habitTimer" placeholder="Enter habit name"><br><br>
+    <label>Condition:</label>
+    <select id="timerCondition">
+      <option value="">Select</option>
+      <option value="atleast">At least</option>
+      <option value="lessthan">Less than</option>
+      <option value="any">Any value</option>
+    </select><br><br>
+    <label>Time:</label>
+    <input type="time" id="timerValue" step="60"> a day
+    <div style="display:flex;justify-content:space-between;margin-top:15px;">
+      <button class="btn small-btn" onclick="goBack('timerPage','screen1')">Back</button>
+      <button class="btn small-btn" onclick="validateAndNext('habitTimer','frequencyPage','errorTimer',['timerCondition','timerValue'])">Next</button>
+    </div>
+    <p id="errorTimer" class="error">Please fill out all required fields before proceeding.</p>
+  </div>
+
+  <!-- Frequency Screen -->
+  <div class="container hidden" id="frequencyPage">
+    <h2>How frequently do you want to do it?</h2>
+    <label><input type="radio" name="freq" value="everyday" onclick="toggleFrequency('everyday')"> Everyday</label><br>
+    <label><input type="radio" name="freq" value="week" onclick="toggleFrequency('week')"> Specific days of week</label><br>
+    <div id="weekDays" class="hidden">
+      <label><input type="checkbox"> Mon</label>
+      <label><input type="checkbox"> Tue</label>
+      <label><input type="checkbox"> Wed</label>
+      <label><input type="checkbox"> Thu</label>
+      <label><input type="checkbox"> Fri</label>
+      <label><input type="checkbox"> Sat</label>
+      <label><input type="checkbox"> Sun</label>
+    </div>
+    <label><input type="radio" name="freq" value="month" onclick="toggleFrequency('month')"> Specific days of month</label>
+    <div id="monthDays" class="calendar-grid hidden"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:15px;">
+      <button class="btn small-btn" onclick="goBackFromFrequency()">Back</button>
+      <button class="btn small-btn" onclick="validateFrequency()">Next</button>
+    </div>
+    <p id="errorFreq" class="error">Please select at least one option before proceeding.</p>
+  </div>
+
+  <!-- When Screen -->
+  <div class="container hidden" id="whenPage">
+    <h2>When would you prefer to do it?</h2>
+    <label>Start Date:</label>
+    <input type="date" id="startDate"><br><br>
+    <label>End Date:</label>
+    <input type="date" id="endDate"><br><br>
+    <label>Reminder:</label>
+    <select id="reminder" onchange="toggleReminderTime()">
+      <option value="alarm">Alarm</option>
+      <option value="notification">Notification</option>
+      <option value="none">None</option>
+    </select><br><br>
+    <div id="reminderTimeDiv">
+      <label>Time:</label>
+      <input type="time" id="reminderTime">
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:15px;">
+      <button class="btn small-btn" onclick="goBack('whenPage','frequencyPage')">Back</button>
+      <button class="btn small-btn" onclick="validateAndFinish()">Save</button>
+    </div>
+    <p id="errorWhen" class="error">Please fill out all required fields before saving.</p>
+  </div>
+
+  <audio id="alarmSound" src="alarm.mp3" preload="auto"></audio>
+
+  <script>
+    let lastEvalScreen = null;
+
+    function goTo(page) {
+      document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
+      document.getElementById(page).classList.remove('hidden');
+      if (['yesnoPage','numericPage','timerPage'].includes(page)) lastEvalScreen = page;
+    }
+
+    function goBack(current, prev) {
+      document.getElementById(current).classList.add('hidden');
+      document.getElementById(prev).classList.remove('hidden');
+    }
+
+    function goBackFromFrequency() {
+      goBack('frequencyPage', lastEvalScreen || 'screen1');
+    }
+
+    function toggleFrequency(type) {
+      const weekDiv = document.getElementById('weekDays');
+      const monthDiv = document.getElementById('monthDays');
+      weekDiv.classList.add('hidden');
+      monthDiv.classList.add('hidden');
+      if (type === 'week') weekDiv.classList.remove('hidden');
+      if (type === 'month') monthDiv.classList.remove('hidden');
+    }
+
+    function toggleReminderTime() {
+      document.getElementById('reminderTimeDiv').style.display = document.getElementById('reminder').value === 'none' ? 'none' : 'block';
+    }
+
+    function validateAndNext(inputId, nextPage, errorId, extraFields=[]) {
+      let valid = document.getElementById(inputId)?.value.trim() !== '';
+      extraFields.forEach(f => { if (!document.getElementById(f)?.value.trim()) valid = false; });
+      if (!valid) { document.getElementById(errorId).style.display='block'; return; }
+      document.getElementById(errorId).style.display='none';
+      goTo(nextPage);
+    }
+
+    function validateFrequency() {
+      const freq = document.querySelector('input[name="freq"]:checked');
+      if (!freq) return alert('Select a frequency option');
+      if (freq.value === 'week' && !Array.from(document.querySelectorAll('#weekDays input:checked')).length) return alert('Select at least one weekday');
+      if (freq.value === 'month' && !Array.from(document.querySelectorAll('#monthDays input:checked')).length) return alert('Select at least one date');
+      goTo('whenPage');
+    }
+
+    function validateAndFinish() {
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+      const reminder = document.getElementById('reminder').value;
+      const time = document.getElementById('reminderTime').value;
+      if (!start || !end || (reminder !== 'none' && !time)) { document.getElementById('errorWhen').style.display='block'; return; }
+      document.getElementById('errorWhen').style.display='none';
+      let habits = JSON.parse(localStorage.getItem('habits')||"[]");
+      habits.push({
+        name: document.getElementById('habitYesNo').value || document.getElementById('habitNumeric').value || document.getElementById('habitTimer').value,
+        type: reminder,
+        startDate: start,
+        endDate: end
+      });
+      localStorage.setItem('habits', JSON.stringify(habits));
+      alert('Habit saved successfully!');
+      window.location.href = 'allhabits.html';
+    }
+
+    window.onload = function() {
+      const monthDiv = document.getElementById('monthDays');
+      for (let i=1;i<=31;i++){
+        const label=document.createElement('label');
+        const checkbox=document.createElement('input');
+        checkbox.type='checkbox'; checkbox.value=i;
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(i));
+        monthDiv.appendChild(label);
+      }
+    }
+  </script>
+</body>
+</html>

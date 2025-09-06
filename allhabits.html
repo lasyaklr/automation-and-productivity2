@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Habits</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body {
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+  }
+
+  .container {
+    width: 90%;
+    max-width: 390px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-top: 20px;
+    flex: 1 0 auto;
+  }
+
+  .back-btn {
+    border: none;
+    background: none;
+    font-size: 20px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    color: #2196F3;
+  }
+
+  h2 {
+    font-size: 22px;
+    margin-bottom: 15px;
+    color: #333;
+    text-align: center;
+  }
+
+  .habit-card {
+    background: #e8f0fe;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(33,150,243,0.3);
+  }
+
+  .habit-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .habit-name {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .habit-type {
+    font-size: 14px;
+    color: #0066ff;
+    font-weight: 500;
+  }
+
+  .habit-info {
+    font-size: 13px;
+    margin-bottom: 8px;
+  }
+
+  /* Calendar with dates */
+  .calendar-strip {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    justify-content: space-between;
+  }
+
+  .calendar-day {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+    border: 2px solid blue;
+    color: #333;
+    cursor: pointer;
+    user-select: none;
+    transition: 0.3s;
+  }
+
+  .calendar-day.done {
+    border-color: green;
+  }
+
+  .calendar-day.not-done {
+    border-color: red;
+  }
+
+  .delete-btn {
+    border: none;
+    background: none;
+    color: red;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 5px;
+  }
+
+  /* Bottom Navigation */
+  .bottom-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 370px;
+    height: 59px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 30px;
+    box-shadow: 0px -10px 100px rgba(86,86,86,0.25);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .bottom-nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: rgba(51,51,51,0.7);
+    cursor: pointer;
+    padding: 6px 0;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .bottom-nav button i {
+    font-size: 18px;
+    margin-bottom: 3px;
+  }
+
+  .bottom-nav button.active {
+    color: #fff;
+    background: #2196F3;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <button class="back-btn" onclick="history.back()">← </button>
+  <h2>All Habits</h2>
+  <div id="habits-section"></div>
+</div>
+
+<div class="bottom-nav">
+  <button onclick="window.location.href='home.html'">
+    <i class="fas fa-home"></i>
+    Home
+  </button>
+  <button class="active" onclick="window.location.href='allhabits.html'">
+    <i class="fas fa-bullseye"></i>
+    Habits
+  </button>
+  <button onclick="window.location.href='alltasks.html'">
+    <i class="fas fa-tasks"></i>
+    Tasks
+  </button>
+  <button onclick="window.location.href='timer.html'">
+    <i class="fas fa-clock"></i>
+    Timer
+  </button>
+</div>
+
+<script>
+const habitsSection = document.getElementById('habits-section');
+let allHabits = JSON.parse(localStorage.getItem("habits")) || [];
+
+// Function to get last 7 days (including today)
+function getLast7Days() {
+  let days = [];
+  let today = new Date();
+  for (let i = 6; i >= 0; i--) {
+    let d = new Date(today);
+    d.setDate(today.getDate() - i);
+    days.push({
+      date: d.getDate(),
+      key: d.toISOString().split("T")[0] // unique key YYYY-MM-DD
+    });
+  }
+  return days;
+}
+
+function renderHabits() {
+  habitsSection.innerHTML = '';
+
+  if(allHabits.length === 0) {
+    habitsSection.innerHTML = "<p style='text-align:center; color:gray;'>No habits added yet.</p>";
+    return;
+  }
+
+  allHabits.forEach((habit, index) => {
+    const card = document.createElement('div');
+    card.classList.add('habit-card');
+
+    // Header
+    const header = document.createElement('div');
+    header.classList.add('habit-header');
+
+    const nameSpan = document.createElement('span');
+    nameSpan.classList.add('habit-name');
+    nameSpan.textContent = habit.name;
+
+    const typeSpan = document.createElement('span');
+    typeSpan.classList.add('habit-type');
+    typeSpan.textContent = habit.type;
+
+    header.appendChild(nameSpan);
+    header.appendChild(typeSpan);
+    card.appendChild(header);
+
+    // Info
+    const infoDiv = document.createElement('div');
+    infoDiv.classList.add('habit-info');
+    infoDiv.innerHTML = `
+      Frequency: ${habit.frequency}<br>
+      Start: ${habit.startDate} | End: ${habit.endDate}<br>
+      Reminder: ${habit.reminder} ${habit.time || ''}
+    `;
+    card.appendChild(infoDiv);
+
+    // Calendar with last 7 dates
+    const calDiv = document.createElement('div');
+    calDiv.classList.add('calendar-strip');
+
+    if (!habit.progress) habit.progress = {};
+
+    const last7 = getLast7Days();
+    last7.forEach(dayObj => {
+      const dayDiv = document.createElement('div');
+      dayDiv.classList.add('calendar-day');
+      dayDiv.textContent = dayObj.date;
+
+      if(habit.progress[dayObj.key] === "done") {
+        dayDiv.classList.add("done");
+      } else if(habit.progress[dayObj.key] === "not-done") {
+        dayDiv.classList.add("not-done");
+      }
+
+      // Toggle state on click
+      dayDiv.addEventListener("click", () => {
+        if(dayDiv.classList.contains("done")) {
+          dayDiv.classList.remove("done");
+          dayDiv.classList.add("not-done");
+          habit.progress[dayObj.key] = "not-done";
+        } else if(dayDiv.classList.contains("not-done")) {
+          dayDiv.classList.remove("not-done");
+          delete habit.progress[dayObj.key];
+        } else {
+          dayDiv.classList.add("done");
+          habit.progress[dayObj.key] = "done";
+        }
+        localStorage.setItem("habits", JSON.stringify(allHabits));
+      });
+
+      calDiv.appendChild(dayDiv);
+    });
+
+    card.appendChild(calDiv);
+
+    // Delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.classList.add('delete-btn');
+    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+    deleteBtn.addEventListener('click', () => {
+      allHabits.splice(index, 1);
+      localStorage.setItem("habits", JSON.stringify(allHabits));
+      renderHabits();
+    });
+
+    card.appendChild(deleteBtn);
+    habitsSection.appendChild(card);
+  });
+}
+
+renderHabits();
+</script>
+
+</body>
+</html>
+

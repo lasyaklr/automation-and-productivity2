@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Productivity App</title>
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 90%;
+      max-width: 390px;
+      background: #fff;
+      position: relative;
+      padding: 20px;
+      box-sizing: border-box;
+      border-radius: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .calendar-strip {
+      display: flex;
+      overflow-x: auto;
+      gap: 10px;
+      padding: 10px 0;
+      margin-bottom: 20px;
+      scroll-behavior: smooth;
+    }
+
+    .calendar-strip::-webkit-scrollbar {
+      display: none;
+    }
+
+    .date {
+      min-width: 55px;
+      height: 65px;
+      border-radius: 12px;
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      cursor: pointer;
+      font-weight: 500;
+      color: #333;
+      flex-shrink: 0;
+    }
+
+    .date.selected {
+      background: #2196F3;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .day {
+      font-size: 12px;
+      margin-bottom: 3px;
+    }
+
+    .day-number {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .tasks-title {
+      font-weight: 700;
+      font-size: 20px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .tasks-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .task, .habit {
+      min-height: 50px;
+      margin-bottom: 10px;
+      background: rgba(33,150,243,0.08);
+      border: 1px solid rgba(51,51,51,0.1);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 15px;
+      font-size: 15px;
+      color: #333;
+    }
+
+    .task span.time, .habit span.time {
+      color: #2196F3;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+
+    .task input[type="checkbox"], .habit input[type="checkbox"] {
+      transform: scale(1.2);
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .completed {
+      text-decoration: line-through;
+      color: gray;
+      opacity: 0.7;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 370px;
+      height: 59px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 30px;
+      box-shadow: 0px -10px 100px rgba(86,86,86,0.25);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .bottom-nav button {
+      flex: 1;
+      background: none;
+      border: none;
+      font-size: 12px;
+      color: rgba(51,51,51,0.7);
+      cursor: pointer;
+      padding: 6px 0;
+      border-radius: 10px;
+      transition: background 0.3s, color 0.3s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bottom-nav button i {
+      font-size: 18px;
+      margin-bottom: 3px;
+    }
+
+    .bottom-nav button.active {
+      color: #fff;
+      background: #2196F3;
+    }
+
+    .add-btn {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 55px;
+      height: 55px;
+      background: #2196F3;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 30px;
+      line-height: 55px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .month-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .month-nav button {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #2196F3;
+    }
+
+    .month-nav span {
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.4);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      width: 80%;
+      max-width: 300px;
+      text-align: center;
+    }
+
+    .modal-content button {
+      margin: 0;
+      padding: 10px 0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      width: 100%;
+    }
+
+    .btn-primary {
+      background: #2196F3;
+      color: white;
+      margin-bottom: 5px;
+    }
+
+    .modal-content p {
+      margin: 5px 0 15px 0;
+      font-size: 12px;
+      color: #555;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Month Navigation -->
+  <div class="month-nav">
+    <button id="prevMonth">◀</button>
+    <span id="monthYear"></span>
+    <button id="nextMonth">▶</button>
+  </div>
+
+  <!-- Calendar Strip -->
+  <div class="calendar-strip" id="calendar-strip"></div>
+
+  <!-- Today's Schedule -->
+  <div class="tasks-title">Today's Schedule</div>
+  <div class="tasks-section" id="tasks-section"></div>
+
+  <!-- Add Button -->
+  <div class="add-btn" id="add-btn">+</div>
+
+  <!-- ✅ Bottom Navigation -->
+  <div class="bottom-nav">
+    <button onclick="window.location.href='home.html'" class="active">
+      <i class="fas fa-home"></i>
+      Home
+    </button>
+    <button onclick="window.location.href='allhabits.html'">
+      <i class="fas fa-bullseye"></i>
+      Habits
+    </button>
+    <button onclick="window.location.href='alltasks.html'">
+      <i class="fas fa-tasks"></i>
+      Tasks
+    </button>
+    <button onclick="window.location.href='timer.html'">
+      <i class="fas fa-clock"></i>
+      Timer
+    </button>
+  </div>
+</div>
+
+<!-- Add Type Modal -->
+<div class="modal" id="addTypeModal">
+  <div class="modal-content">
+    <h3 style="margin-bottom: 15px;">Add</h3>
+    <div style="margin-bottom: 15px;">
+      <button class="btn-primary" id="addTaskBtn">Task</button>
+      <p>A Task is something you want to do at a specific time or day. You complete it and check it off.</p>
+    </div>
+    <div>
+      <button class="btn-primary" id="addHabitBtn">Habit</button>
+      <p>A Habit is a repeated activity you want to track regularly. It helps build routines.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const calendarStrip = document.getElementById('calendar-strip');
+  const monthYear = document.getElementById('monthYear');
+  const tasksSection = document.getElementById('tasks-section');
+
+  function formatYMDLocal(d){
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+  }
+
+  let date = new Date();
+  let selectedDate = formatYMDLocal(new Date()); // default = today
+
+  function renderCalendar(d) {
+    calendarStrip.innerHTML = '';
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+
+    monthYear.textContent = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+    for (let i = 1; i <= lastDay; i++) {
+      const dayDiv = document.createElement('div');
+      dayDiv.className = 'date';
+
+      const dayName = document.createElement('div');
+      dayName.className = 'day';
+      dayName.textContent = new Date(year, month, i).toLocaleDateString('en-US', { weekday: 'short' });
+
+      const dayNumber = document.createElement('div');
+      dayNumber.className = 'day-number';
+      dayNumber.textContent = i;
+
+      const thisDateStr = formatYMDLocal(new Date(year, month, i));
+      if (thisDateStr === selectedDate) dayDiv.classList.add('selected');
+
+      dayDiv.addEventListener('click', () => {
+        selectedDate = thisDateStr;
+        renderCalendar(date);
+        renderSchedule();
+      });
+
+      dayDiv.appendChild(dayName);
+      dayDiv.appendChild(dayNumber);
+      calendarStrip.appendChild(dayDiv);
+    }
+
+    // center selected day
+    const sel = document.querySelector('.date.selected');
+    if (sel) {
+      const containerWidth = calendarStrip.offsetWidth;
+      const center = sel.offsetLeft + sel.offsetWidth / 2;
+      calendarStrip.scrollLeft = center - containerWidth / 2;
+    }
+  }
+
+  function renderSchedule() {
+    tasksSection.innerHTML = '';
+
+    const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+    const habits = JSON.parse(localStorage.getItem('habits') || '[]');
+
+    const todaysTasks = tasks.filter(t => t.date === selectedDate);
+    const todaysHabits = habits.filter(h => {
+      if (h.date) return h.date === selectedDate; // if you store single-date habits later
+      if (h.startDate && h.endDate) return h.startDate <= selectedDate && selectedDate <= h.endDate;
+      return false;
+    });
+
+    if (todaysTasks.length === 0 && todaysHabits.length === 0) {
+      tasksSection.innerHTML = "<p style='text-align:center;color:gray;margin-top:8px;'>No tasks or habits for this date.</p>";
+      return;
+    }
+
+    if (todaysTasks.length > 0) {
+      const h = document.createElement('div');
+      h.style.fontWeight = '700';
+      h.style.margin = '6px 0';
+      h.textContent = 'Tasks';
+      tasksSection.appendChild(h);
+
+      todaysTasks.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'task';
+
+        const left = document.createElement('div');
+        left.style.display = 'flex';
+        left.style.alignItems = 'center';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = item.name;
+
+        checkbox.addEventListener('change', () => {
+          nameSpan.classList.toggle('completed', checkbox.checked);
+        });
+
+        left.appendChild(checkbox);
+        left.appendChild(nameSpan);
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'time';
+        timeSpan.textContent = item.time || '';
+
+        div.appendChild(left);
+        div.appendChild(timeSpan);
+        tasksSection.appendChild(div);
+      });
+    }
+
+    if (todaysHabits.length > 0) {
+      const h = document.createElement('div');
+      h.style.fontWeight = '700';
+      h.style.margin = '10px 0 6px';
+      h.textContent = 'Habits';
+      tasksSection.appendChild(h);
+
+      todaysHabits.forEach(habit => {
+        const div = document.createElement('div');
+        div.className = 'habit';
+
+        const left = document.createElement('div');
+        left.style.display = 'flex';
+        left.style.alignItems = 'center';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = habit.name;
+
+        checkbox.addEventListener('change', () => {
+          nameSpan.classList.toggle('completed', checkbox.checked);
+        });
+
+        left.appendChild(checkbox);
+        left.appendChild(nameSpan);
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'time';
+        timeSpan.textContent = habit.reminderTime || habit.time || '';
+
+        div.appendChild(left);
+        div.appendChild(timeSpan);
+        tasksSection.appendChild(div);
+      });
+    }
+  }
+
+  document.getElementById('prevMonth').addEventListener('click', () => {
+    date.setMonth(date.getMonth() - 1);
+    renderCalendar(date);
+  });
+
+  document.getElementById('nextMonth').addEventListener('click', () => {
+    date.setMonth(date.getMonth() + 1);
+    renderCalendar(date);
+  });
+
+  // Modal handlers
+  const addBtn = document.getElementById('add-btn');
+  const addTypeModal = document.getElementById('addTypeModal');
+  addBtn.addEventListener('click', () => addTypeModal.style.display = 'flex');
+  window.addEventListener('click', (e) => { if (e.target === addTypeModal) addTypeModal.style.display = 'none'; });
+  document.getElementById('addTaskBtn').addEventListener('click', () => window.location.href = 'tasks.html');
+  document.getElementById('addHabitBtn').addEventListener('click', () => window.location.href = 'habits_page.html');
+
+  // initial paint
+  renderCalendar(date);
+  renderSchedule();
+</script>
+ 
+</body>
+</html>

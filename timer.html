@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Focus Timer with Pause, Reset, Sound, Dark Mode</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px 20px;
+      margin: 0;
+      text-align: center;
+      background-color: #fff;
+      color: #222;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    h2 { margin-bottom: 20px; }
+    .timer-inputs { margin-bottom: 15px; }
+    input[type="number"] {
+      width: 60px;
+      padding: 8px;
+      font-size: 16px;
+      text-align: center;
+      margin: 0 5px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      transition: border-color 0.3s;
+    }
+    input[type="number"]:focus {
+      border-color: #4caf50;
+      outline: none;
+    }
+    button {
+      padding: 10px 25px;
+      font-size: 16px;
+      margin: 10px 5px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      min-width: 90px;
+    }
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+    button#startBtn {
+      background-color: #4caf50;
+      color: white;
+    }
+    button#pauseBtn {
+      background-color: #ff9800;
+      color: white;
+      display: none;
+    }
+    button#resetBtn {
+      background-color: #f44336;
+      color: white;
+      display: none;
+    }
+    canvas {
+      max-width: 320px;
+      margin: 20px auto;
+    }
+    #time {
+      font-size: 28px;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    #message {
+      font-size: 18px;
+      margin-top: 20px;
+      min-height: 28px;
+    }
+    body.dark {
+      background-color: #121212;
+      color: #eee;
+    }
+    body.dark input[type="number"] {
+      background-color: #222;
+      border-color: #555;
+      color: #eee;
+    }
+    body.dark input[type="number"]:focus {
+      border-color: #80deea;
+    }
+    body.dark button#startBtn {
+      background-color: #80deea;
+      color: #121212;
+    }
+    body.dark button#pauseBtn {
+      background-color: #ffb74d;
+      color: #121212;
+    }
+    body.dark button#resetBtn {
+      background-color: #ef5350;
+      color: #121212;
+    }
+    @media (max-width: 480px) {
+      body {
+        padding: 20px 10px;
+      }
+      input[type="number"] {
+        width: 50px;
+        font-size: 14px;
+        margin: 0 3px;
+      }
+      button {
+        padding: 8px 15px;
+        font-size: 14px;
+      }
+      canvas {
+        max-width: 280px;
+      }
+      #time {
+        font-size: 24px;
+      }
+      #message {
+        font-size: 16px;
+      }
+    }
+    #darkModeToggle {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background-color: #4caf50;
+      border: none;
+      color: white;
+      padding: 8px 12px;
+      font-size: 14px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 1000;
+      transition: background-color 0.3s;
+    }
+    body.dark #darkModeToggle {
+      background-color: #80deea;
+      color: #121212;
+    }
+    #history {
+      margin-top: 25px;
+      text-align: left;
+      max-width: 320px;
+      margin-left: auto;
+      margin-right: auto;
+      font-size: 14px;
+    }
+    #history li {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <button id="darkModeToggle" aria-label="Toggle dark mode">Dark Mode</button>
+
+  <h2>⏳ Focus Timer</h2>
+
+  <div class="timer-inputs" aria-label="Timer inputs">
+    <input type="number" id="hours" placeholder="hh" min="0" aria-label="Hours" />
+    <input type="number" id="minutes" placeholder="mm" min="0" max="59" aria-label="Minutes" />
+    <input type="number" id="seconds" placeholder="ss" min="0" max="59" aria-label="Seconds" />
+  </div>
+
+  <div>
+    <button id="startBtn">Start Timer</button>
+    <button id="pauseBtn">Pause</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+
+  <canvas id="focusChart" width="300" height="300" aria-label="Focus timer progress chart"></canvas>
+
+  <div id="time" aria-live="polite">Time Left: --:--:--</div>
+  <div id="message" aria-live="polite">Waiting to start...</div>
+
+  <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+
+  <ul id="history"></ul>
+
+  <script>
+    const ctx = document.getElementById('focusChart').getContext('2d');
+    const alarmSound = document.getElementById('alarmSound');
+
+    let totalDuration = 0;
+    let elapsed = 0;
+    let interval = null;
+    let isPaused = false;
+
+    const focusChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Completed', 'Remaining'],
+        datasets: [{
+          data: [0, 100],
+          backgroundColor: ['#4caf50', '#ddd'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        cutout: '70%',
+        animation: { duration: 400, easing: "easeOutQuart" },
+        plugins: { legend: { display: false } }
+      }
+    });
+
+    const messages = [
+      "✅ Great start! Keep going 💪",
+      "🔥 Halfway there 🚀",
+      "⚡ Almost done, push harder!",
+      "🎉 You did it! Awesome!"
+    ];
+
+    function formatTime(seconds) {
+      let h = Math.floor(seconds / 3600);
+      let m = Math.floor((seconds % 3600) / 60);
+      let s = seconds % 60;
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateChartAndUI() {
+      let percent = (elapsed / totalDuration) * 100;
+      focusChart.data.datasets[0].data = [percent, 100 - percent];
+      focusChart.update();
+
+      let msg = "Keep going!";
+      if (percent >= 100) {
+        msg = messages[3];
+      } else if (percent >= 75) {
+        msg = messages[2];
+      } else if (percent >= 50) {
+        msg = messages[1];
+      } else if (percent >= 25) {
+        msg = messages[0];
+      }
+
+      document.getElementById("message").innerText = msg;
+      document.getElementById("time").innerText = "Time Left: " + formatTime(totalDuration - elapsed);
+    }
+
+    function tick() {
+      if (!isPaused) {
+        elapsed++;
+        updateChartAndUI();
+
+        if (elapsed >= totalDuration) {
+          clearInterval(interval);
+          interval = null;
+          document.getElementById("pauseBtn").style.display = "none";
+          alarmSound.play();
+          addHistory(totalDuration);
+        }
+      }
+    }
+
+    function startTimer() {
+      const hrs = parseInt(document.getElementById("hours").value) || 0;
+      const mins = parseInt(document.getElementById("minutes").value) || 0;
+      const secs = parseInt(document.getElementById("seconds").value) || 0;
+
+      totalDuration = hrs * 3600 + mins * 60 + secs;
+
+      if (totalDuration <= 0) {
+        alert("Please enter a valid time (at least 1 second).");
+        return;
+      }
+
+      elapsed = 0;
+      isPaused = false;
+
+      document.getElementById("hours").disabled = true;
+      document.getElementById("minutes").disabled = true;
+      document.getElementById("seconds").disabled = true;
+      document.getElementById("startBtn").disabled = true;
+
+      document.getElementById("pauseBtn").style.display = "inline-block";
+      document.getElementById("resetBtn").style.display = "inline-block";
+      document.getElementById("pauseBtn").innerText = "Pause";
+
+      updateChartAndUI();
+
+      if (interval) clearInterval(interval);
+      interval = setInterval(tick, 1000);
+    }
+
+    function pauseResumeTimer() {
+      if (!interval) return;
+      isPaused = !isPaused;
+      document.getElementById("pauseBtn").innerText = isPaused ? "Resume" : "Pause";
+    }
+
+    function resetTimer() {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+      elapsed = 0;
+      totalDuration = 0;
+      isPaused = false;
+
+      document.getElementById("hours").disabled = false;
+      document.getElementById("minutes").disabled = false;
+      document.getElementById("seconds").disabled = false;
+      document.getElementById("startBtn").disabled = false;
+
+      document.getElementById("pauseBtn").style.display = "none";
+      document.getElementById("resetBtn").style.display = "none";
+      document.getElementById("pauseBtn").innerText = "Pause";
+      document.getElementById("message").innerText = "Waiting to start...";
+      document.getElementById("time").innerText = "Time Left: --:--:--";
+
+      focusChart.data.datasets[0].data = [0, 100];
+      focusChart.update();
+
+      alarmSound.pause();
+      alarmSound.currentTime = 0;
+    }
+
+    // Add session history
+    function addHistory(duration) {
+      const li = document.createElement("li");
+      li.textContent = `✅ Focused for ${formatTime(duration)}`;
+      document.getElementById("history").appendChild(li);
+    }
+
+    // Clamp inputs to valid ranges
+    function clampInput(e, max) {
+      if (e.target.value < 0) e.target.value = 0;
+      if (max !== null && e.target.value > max) e.target.value = max;
+    }
+    document.getElementById("minutes").addEventListener("input", e => clampInput(e, 59));
+    document.getElementById("seconds").addEventListener("input", e => clampInput(e, 59));
+    document.getElementById("hours").addEventListener("input", e => clampInput(e, null));
+
+    // Dark mode toggle with persistence
+    const darkModeToggle = document.getElementById('darkModeToggle');
+    if (localStorage.getItem("theme") === "dark") {
+      document.body.classList.add("dark");
+      darkModeToggle.innerText = "Light Mode";
+    }
+    darkModeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+      const isDark = document.body.classList.contains('dark');
+      darkModeToggle.innerText = isDark ? "Light Mode" : "Dark Mode";
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+    });
+
+    document.getElementById("startBtn").addEventListener('click', startTimer);
+    document.getElementById("pauseBtn").addEventListener('click', pauseResumeTimer);
+    document.getElementById("resetBtn").addEventListener('click', resetTimer);
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onboarding + Sign Up + Login + Forgot Password</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Roboto', sans-serif; }
+    body { background: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .screen { width: 100%; max-width: 400px; padding: 20px; text-align: center; display: none; }
+    .active { display: block; }
+    .illustration { width: 80%; max-width: 300px; margin: 40px auto 20px; }
+    .title { font-size: 22px; font-weight: 700; color: #333; line-height: 1.4; margin: 20px 0 10px; }
+    .title span { color: #2196F3; }
+    .subtitle { font-size: 16px; color: #666; margin-bottom: 40px; }
+    .btn { background: #2196F3; color: #fff; border: none; border-radius: 30px; padding: 15px 40px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0px 4px 10px rgba(33, 150, 243, 0.2); transition: 0.3s; margin-top: 20px; }
+    .btn:hover { background: #1976D2; }
+    .form-container { width: 100%; max-width: 350px; margin: 0 auto; text-align: left; }
+    .back-btn { color: #2196F3; font-size: 14px; cursor: pointer; margin-bottom: 20px; display: inline-block; }
+    .form-title { font-size: 24px; font-weight: 700; color: #2196F3; margin-bottom: 20px; text-align: center; }
+    .input-group { margin-bottom: 15px; }
+    .input-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #333; }
+    .input-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; }
+    .form-btn { width: 100%; padding: 15px; background: #2196F3; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+    .form-btn:hover { background: #1976D2; }
+    .link-text { text-align: center; margin-top: 15px; font-size: 14px; }
+    .link-text a { color: #2196F3; text-decoration: none; cursor: pointer; }
+    .forgot { font-size: 13px; margin-top: 8px; text-align: right; }
+    .forgot a { color: #2196F3; cursor: pointer; text-decoration: none; }
+    .message { margin-top: 20px; color: green; font-weight: 600; text-align: center; }
+    .warning { color: red; font-size: 14px; margin-top: 10px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <!-- Onboarding Screen -->
+  <div class="screen active" id="onboarding">
+    <img src="image.jpeg" alt="Onboarding Illustration" class="illustration">
+    <div class="title">Simplify, Organize, and Conquer <span>Your Day</span></div>
+    <div class="subtitle">Take control of your tasks and achieve your goals.</div>
+    <button class="btn" onclick="goToSignup()">Let’s Start</button>
+  </div>
+
+  <!-- Sign Up Screen -->
+  <div class="screen" id="signup">
+    <div class="form-container">
+      <div class="back-btn" onclick="goToOnboarding()">⬅ Back</div>
+      <h2 class="form-title">Create Account</h2>
+      <div class="input-group">
+        <label>Full Name</label>
+        <input type="text" placeholder="Enter your name" id="signupName">
+      </div>
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" placeholder="example@email.com" id="signupEmail">
+      </div>
+      <div class="input-group">
+        <label>Create Password</label>
+        <input type="password" placeholder="Enter password" id="signupPass">
+      </div>
+      <div class="input-group">
+        <label>Confirm Password</label>
+        <input type="password" placeholder="Re-enter password" id="signupConfirmPass">
+      </div>
+      <button class="form-btn" onclick="validateAndLogin('signup')">Sign Up</button>
+      <div id="signupWarn" class="warning"></div>
+      <div class="link-text">Already have an account? <a onclick="goToLogin()">Login</a></div>
+    </div>
+  </div>
+
+  <!-- Login Screen -->
+  <div class="screen" id="login">
+    <div class="form-container">
+      <div class="back-btn" onclick="goToSignup()">⬅ Back</div>
+      <h2 class="form-title">Login</h2>
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" placeholder="example@email.com" id="loginEmail">
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input type="password" placeholder="Enter password" id="loginPass">
+      </div>
+      <div class="forgot"><a onclick="goToForgot()">Forgot Password?</a></div>
+      <button class="form-btn" onclick="validateAndLogin('login')">Login</button>
+      <div id="loginWarn" class="warning"></div>
+      <div class="link-text">Don’t have an account? <a onclick="goToSignup()">Sign Up</a></div>
+    </div>
+  </div>
+
+  <!-- Forgot Password Screen -->
+  <div class="screen" id="forgot">
+    <div class="form-container">
+      <div class="back-btn" onclick="goToLogin()">⬅ Back</div>
+      <h2 class="form-title">Forgot Password</h2>
+      <div class="input-group">
+        <label>Email</label>
+        <input type="email" placeholder="Enter your email">
+      </div>
+      <button class="form-btn" onclick="showMessage()">Send Reset Link</button>
+      <div class="message" id="msg"></div>
+    </div>
+  </div>
+
+  <script>
+    function goToSignup() { showScreen("signup"); }
+    function goToLogin() { showScreen("login"); }
+    function goToOnboarding() { showScreen("onboarding"); }
+    function goToForgot() { showScreen("forgot"); }
+
+    function showScreen(id) {
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      clearWarnings();
+    }
+
+    function showMessage() {
+      document.getElementById("msg").innerText = "✅ Password reset link sent to your email!";
+    }
+
+    function clearWarnings() {
+      document.querySelectorAll(".warning").forEach(w => w.innerText = "");
+    }
+
+    function validateAndLogin(formType) {
+      clearWarnings();
+      let valid = true;
+
+      if (formType === "signup") {
+        const name = document.getElementById("signupName").value.trim();
+        const email = document.getElementById("signupEmail").value.trim();
+        const password = document.getElementById("signupPass").value.trim();
+        const confirmPassword = document.getElementById("signupConfirmPass").value.trim();
+
+        if (!name) { document.getElementById("signupWarn").innerText = "⚠ Please enter your name"; valid = false; }
+        else if (!email) { document.getElementById("signupWarn").innerText = "⚠ Please enter your email"; valid = false; }
+        else if (!password) { document.getElementById("signupWarn").innerText = "⚠ Please create a password"; valid = false; }
+        else if (!confirmPassword) { document.getElementById("signupWarn").innerText = "⚠ Please confirm your password"; valid = false; }
+        else if (password !== confirmPassword) { document.getElementById("signupWarn").innerText = "⚠ Passwords do not match"; valid = false; }
+
+      } else if (formType === "login") {
+        const email = document.getElementById("loginEmail").value.trim();
+        const password = document.getElementById("loginPass").value.trim();
+
+        if (!email) { document.getElementById("loginWarn").innerText = "⚠ Please enter your email"; valid = false; }
+        else if (!password) { document.getElementById("loginWarn").innerText = "⚠ Please enter your password"; valid = false; }
+      }
+
+      if (valid) {
+        window.location.href = "s.html"; // ✅ Redirect only when valid
+      }
+    }
+  </script>
+</body>
+</html>

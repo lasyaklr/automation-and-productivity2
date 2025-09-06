@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Tasks</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  body {
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+    background: #f5f5f5;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+  }
+
+  .container {
+    width: 90%;
+    max-width: 390px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    margin-top: 20px;
+    flex: 1 0 auto;
+  }
+
+  .back-btn {
+    border: none;
+    background: none;
+    font-size: 20px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    color: #2196F3;
+  }
+
+  h2 {
+    font-size: 22px;
+    margin-bottom: 15px;
+    color: #333;
+    text-align: center;
+  }
+
+  .item {
+    min-height: 50px;
+    margin-bottom: 10px;
+    background: rgba(33,150,243,0.08);
+    border: 1px solid rgba(51,51,51,0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px;
+    font-size: 15px;
+    color: #333;
+  }
+
+  .item span.time, .item span.date-label {
+    color: #2196F3;
+    font-weight: 600;
+    margin-left: 10px;
+    white-space: nowrap;
+  }
+
+  .delete-btn {
+    border: none;
+    background: none;
+    color: red;
+    font-size: 16px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+  }
+
+  .completed {
+    text-decoration: line-through;
+    color: gray;
+  }
+
+  /* Bottom Navigation */
+  .bottom-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 370px;
+    height: 59px;
+    background: rgba(255,255,255,0.95);
+    border-radius: 30px;
+    box-shadow: 0px -10px 100px rgba(86,86,86,0.25);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .bottom-nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: rgba(51,51,51,0.7);
+    cursor: pointer;
+    padding: 6px 0;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .bottom-nav button i {
+    font-size: 18px;
+    margin-bottom: 3px;
+  }
+
+  .bottom-nav button.active {
+    color: #fff;
+    background: #2196F3;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <button class="back-btn" onclick="history.back()">← </button>
+  <h2>All Tasks</h2>
+  <div id="tasks-section"></div>
+</div>
+
+<!-- Bottom Navigation -->
+<div class="bottom-nav">
+  <button onclick="window.location.href='home.html'">
+    <i class="fas fa-home"></i>
+    Home
+  </button>
+  <button onclick="window.location.href='allhabits.html'">
+    <i class="fas fa-bullseye"></i>
+    Habits
+  </button>
+  <button class="active" onclick="window.location.href='alltasks.html'">
+    <i class="fas fa-tasks"></i>
+    Tasks
+  </button>
+  <button onclick="window.location.href='timer.html'">
+    <i class="fas fa-clock"></i>
+    Timer
+  </button>
+</div>
+<script>
+  const tasksSection = document.getElementById('tasks-section');
+  let allTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+  function renderTasks() {
+    tasksSection.innerHTML = '';
+
+    if(allTasks.length === 0) {
+      tasksSection.innerHTML = "<p style='text-align:center; color:gray;'>No tasks or habits added yet.</p>";
+      return;
+    }
+
+    allTasks.forEach((task, index) => {
+      const div = document.createElement('div');
+      div.classList.add('item');
+
+     
+      // Task name
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = task.name;
+      if(task.done) nameSpan.classList.add('completed');
+
+      // Time
+      const timeSpan = document.createElement('span');
+      timeSpan.classList.add('time');
+      if(task.time) timeSpan.textContent = task.time;
+
+      // Date
+      const dateSpan = document.createElement('span');
+      dateSpan.classList.add('date-label');
+      dateSpan.textContent = task.date;
+
+      // Delete button
+      const deleteBtn = document.createElement('button');
+      deleteBtn.classList.add('delete-btn');
+      deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+      deleteBtn.addEventListener('click', () => {
+        allTasks.splice(index, 1);
+        localStorage.setItem("tasks", JSON.stringify(allTasks));
+        renderTasks();
+      });
+
+     
+      div.appendChild(nameSpan);
+      if(task.time) div.appendChild(timeSpan);
+      div.appendChild(dateSpan);
+      div.appendChild(deleteBtn);
+
+      tasksSection.appendChild(div);
+    });
+  }
+
+  renderTasks();
+
+  // Ask notification permission
+  if (Notification.permission !== "granted") {
+    Notification.requestPermission();
+  }
+
+  function scheduleAlarms() {
+    allTasks.forEach((task, index) => {
+      if (!task.date || !task.time) return;
+
+      let alarmTime = new Date(task.date + "T" + task.time);
+      let now = new Date();
+
+      let diff = alarmTime.getTime() - now.getTime();
+
+      if (diff > 0) {
+        setTimeout(() => {
+          triggerReminder(task, index);
+        }, diff);
+      }
+    });
+  }
+
+  function triggerReminder(task, index) {
+    // If reminder is not set → do nothing
+    if (!task.reminder || task.reminder === "None") return;
+
+    // Case 1: Alarm
+    if (task.reminder === "Alarm") {
+      let audio = new Audio("alarm.mp3");
+      audio.loop = true;
+      audio.play();
+
+      // Custom popup for alarm
+      let popup = document.createElement("div");
+      popup.style.position = "fixed";
+      popup.style.top = "30%";
+      popup.style.left = "50%";
+      popup.style.transform = "translateX(-50%)";
+      popup.style.background = "#fff";
+      popup.style.padding = "20px";
+      popup.style.boxShadow = "0 4px 10px rgba(0,0,0,0.3)";
+      popup.style.borderRadius = "10px";
+      popup.style.textAlign = "center";
+      popup.innerHTML = `
+        <h3>⏰ ${task.name}</h3>
+        <p>${task.date} ${task.time}</p>
+        <button id="snoozeBtn">Snooze 5 min</button>
+        <button id="dismissBtn">Dismiss</button>
+      `;
+      document.body.appendChild(popup);
+
+      document.getElementById("dismissBtn").onclick = () => {
+        audio.pause();
+        popup.remove();
+      };
+
+      document.getElementById("snoozeBtn").onclick = () => {
+        audio.pause();
+        popup.remove();
+        setTimeout(() => triggerReminder(task, index), 5 * 60 * 1000); // Snooze 5 min
+      };
+    }
+
+    // Case 2: Notification
+    else if (task.reminder === "Notification") {
+      if (Notification.permission === "granted") {
+        new Notification("🔔 Reminder: " + task.name, {
+          body: `Scheduled at ${task.time} on ${task.date}`,
+          icon: "https://cdn-icons-png.flaticon.com/512/1827/1827415.png"
+        });
+      } else {
+        alert("Reminder: " + task.name + " at " + task.time);
+      }
+    }
+  }
+
+  scheduleAlarms();
+
+  // 🔔 Old alarm loop (optional — you can remove if not needed)
+  setInterval(() => {
+    let now = new Date();
+    let currentTime = now.getHours().toString().padStart(2, '0') + ":" +
+                      now.getMinutes().toString().padStart(2, '0');
+
+    document.querySelectorAll(".task-row").forEach(row => {
+      let taskTime = row.getAttribute("data-time");
+      if (taskTime === currentTime) {
+        let audio = new Audio("alarm.mp3");
+        audio.play();
+        alert("⏰ Time for: " + row.querySelector(".task-name").innerText);
+      }
+    });
+  }, 1000);
+
+</script>
+
+    
+</body>
+</html>

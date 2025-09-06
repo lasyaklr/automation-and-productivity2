@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f6ff;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 400px;
+      text-align: center;
+      position: relative;
+    }
+
+    .top-back-btn {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: #007BFF;
+      cursor: pointer;
+    }
+
+    h2 {
+      color: #007BFF;
+      margin-bottom: 25px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      background: #007BFF;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #0056cc;
+    }
+
+    @media(max-width:600px) {
+      .container {
+        width: 90%;
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <button class="top-back-btn" onclick="history.back()">←</button>
+    <h2>Add Task</h2>
+
+    <div class="form-group">
+      <input type="text" id="taskName" placeholder="Task Name">
+    </div>
+
+    <div class="form-group">
+      <input type="date" id="taskDate">
+    </div>
+
+    <div class="form-group">
+      <select id="reminder">
+        <option value="Alarm">Alarm</option>
+        <option value="Notification">Notification</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <input type="time" id="taskTime">
+    </div>
+
+    <button class="btn" onclick="addTask()">Add Task</button>
+  </div>
+
+  <script>
+    function addTask() {
+      let name = document.getElementById("taskName").value;
+      let date = document.getElementById("taskDate").value;
+      let reminder = document.getElementById("reminder").value;
+      let time = document.getElementById("taskTime").value;
+
+      if (name === "" || date === "" || time === "") {
+        alert("Please fill all fields!");
+        return;
+      }
+
+      let allTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+      allTasks.push({
+        name: name,
+        date: date,
+        time: time,
+        type: "task",
+        reminder: reminder
+      });
+
+      localStorage.setItem("tasks", JSON.stringify(allTasks));
+
+      document.getElementById("taskName").value = "";
+      document.getElementById("taskDate").value = "";
+      document.getElementById("taskTime").value = "";
+
+      alert("Task added successfully!");
+    }
+  </script>
+
+</body>
+</html>
